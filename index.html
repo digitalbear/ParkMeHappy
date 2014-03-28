@@ -9,8 +9,10 @@
 
         <!-- Place favicon.ico and apple-touch-icon(s) in the root directory -->
 
+        <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jquerymobile/1.4.2/jquery.mobile.min.css" />
         <link rel="stylesheet" href="css/normalize.css">
         <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/map.css">
         <script src="js/vendor/modernizr-2.7.1.min.js"></script>
     </head>
     <body>
@@ -18,22 +20,66 @@
             <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
 
-        <!-- Add your site or application content here -->
-        <p>Hello world! This is HTML5 Boilerplate.</p>
+		<!-- Main Page -->
+	    <div id="main" data-role="page">
+	    
+			<div data-role="header" data-position="fixed">
+				<h1>Park-Me-Happy</h1>
+			</div>
+	 
+			<div data-role="content">
+				<h3></h3>
+				<a onclick="getCurrentLocation()" data-role="button">Search Near Me</a>
+			</div>
+	
+			<div id="locationerrorpopup" data-role="popup" data-dismissible="true"
+				class="ui-corner-all">
+				<div data-role="header">
+					<h1>Location Error</h1>
+				</div>
+				<div id="errorpopuptext" data-role="content">
+					<p>Error: location services may be turned off</p>
+				</div>
+			</div>		
+	
+			<div data-role="content">
+				<ul id="searchList" data-role="listview" data-inset="true" data-filter="true" data-filter-reveal="true" data-filter-placeholder="Enter post code..."></ul>
+			</div>	
+	  
+			<div data-role="footer" data-position="fixed">
+				<h3></h3>
+				<a href="about.html" data-role="button"  class="ui-btn-right">About</a>
+			</div>      
+		
+	    </div>
+		
+		<div id="locationerrordialog" data-role="page">
+			<div data-role="header">
+				<h1>Location Error</h1>
+			</div>
+			<div id="errortext" data-role="content">
+				<p>Error: location services may be turned off</p>
+			</div>
+		</div>
+
+	    <div data-role="page" id="map-page" data-add-back-btn="true">
+		  
+	      <div data-role="header" data-position="fixed">
+	        <h1>Park-Me-Happy Map</h1>
+	      </div>
+		  
+		  <div data-role="content" id="map-canvas">
+			<!-- map loads here... -->
+		  </div>
+		  
+		</div>
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquerymobile/1.4.2/jquery.mobile.min.js"></script>
+        <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDwZEp-H7ZEyr1x4JPerPlfgdxNnn3fzUQ&sensor=true"></script>
         <script src="js/plugins.js"></script>
         <script src="js/main.js"></script>
 
-        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
-        <script>
-            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
-            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
-            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
-            e.src='//www.google-analytics.com/analytics.js';
-            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
-            ga('create','UA-XXXXX-X');ga('send','pageview');
-        </script>
     </body>
 </html>
