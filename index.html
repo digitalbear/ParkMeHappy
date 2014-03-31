@@ -26,16 +26,16 @@
 			<div data-role="header" data-position="fixed">
 				<h1>Park-Me-Happy</h1>
 			</div>
+			
+			<div data-role="content">
+				<h3></h3>
+				<a onclick="showDefaultMap()" data-role="button">Show Map (at Aviva)</a>
+			</div>				
 	 
 			<div data-role="content">
 				<h3></h3>
 				<a onclick="getCurrentLocation()" data-role="button">Search Near Me</a>
-			</div>
-			
-			<div data-role="content">
-				<h3></h3>
-				<a href="#map-page" data-role="button">Show Map</a>
-			</div>			
+			</div>		
 	
 			<div id="locationerrorpopup" data-role="popup" data-dismissible="true"
 				class="ui-corner-all">
@@ -47,9 +47,12 @@
 				</div>
 			</div>		
 	
-			<div data-role="content">
-				<ul id="searchList" data-role="listview" data-inset="true" data-filter="true" data-filter-reveal="true" data-filter-placeholder="Enter post code..."></ul>
-			</div>	
+			<form action="http://uk-postcodes.com/postcode/" id="postCodeSearch">
+				<input type="text" name="postCode" id="postCode" value="" placeholder="Enter Post Code (with no spaces)..."/>
+				<input type="submit" value="Search" />
+			</form>
+			
+			<div id="result"></div>
 	  
 			<div data-role="footer" data-position="fixed">
 				<h3></h3>
@@ -85,6 +88,7 @@
         <script src="http://maps.googleapis.com/maps/api/js?libraries=visualization&key=AIzaSyDwZEp-H7ZEyr1x4JPerPlfgdxNnn3fzUQ&sensor=true"></script>
         <script src="js/plugins.js"></script>
         <script src="js/main.js"></script>
+        <script src="http://uk-postcodes.com/postcode/WR141ET.json?callback=jsonpCallback"></script>
 
     </body>
 </html>
