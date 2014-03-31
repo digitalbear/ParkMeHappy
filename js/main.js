@@ -37,6 +37,10 @@ function showSearchLocation(searchLat, searchLong) {
 	window.location = "#map-page";
 }
 
+function showDefaultMap() {
+	window.location = "#map-page";
+}
+
 /*
  * Google Maps documentation: http://code.google.com/apis/maps/documentation/javascript/basics.html
  * Geolocation documentation: http://dev.w3.org/geo/api/spec-source.html
@@ -44,7 +48,7 @@ function showSearchLocation(searchLat, searchLong) {
 $( document ).on( "pageshow", "#map-page", function() {
 	console.log("page loading");
 	console.log("latitude: " + latitude + ", longitude: " + longitude);
-	drawMap(new google.maps.LatLng(latitude, longitude));
+	/*drawMap(new google.maps.LatLng(latitude, longitude));
 	
 	function drawMap(currLatLng) {
 		var mapOptions = {
@@ -53,6 +57,24 @@ $( document ).on( "pageshow", "#map-page", function() {
 			mapTypeId: google.maps.MapTypeId.ROADMAP
 		};
 		var map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
-		
 	}
+	*/
+	var aviva = new google.maps.LatLng(52.623798, 1.294910);
+
+    map = new google.maps.Map(document.getElementById('map-canvas'), {
+      center: aviva,
+      zoom: 16,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+	
+    var heatmapData = [
+	  {location: new google.maps.LatLng(52.623798, 1.294910), weight: 20},
+      new google.maps.LatLng(52.623798, 1.294910)
+    ];
+
+    var heatmap = new google.maps.visualization.HeatmapLayer({
+      data: heatmapData
+    });
+    heatmap.setMap(map);
+
 });	
