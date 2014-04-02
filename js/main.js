@@ -159,6 +159,26 @@ $("#carParkNorwich").submit(function(event) {
     
 });
 
+function getCarParkName(str) {
+	var newStr = str.split(":");
+	return newStr[0];
+}
+
+function createMarker(latlng, map, title, content) {
+	var marker = new google.maps.Marker({
+        position: latlng,
+        map: map,
+        title: title
+    });   
+	        
+    google.maps.event.addListener(marker, 'click', function() {
+    	infowindow.setContent(content);
+    	infowindow.open(map, this);
+    });
+    
+    return marker;
+}
+
 /*
  * Google Maps documentation: https://developers.google.com/maps/documentation/javascript/reference
  */
@@ -188,16 +208,40 @@ $( document ).on( "pageshow", "#map-page", function() {
     // Add Car Park Data, if available
     if (CAR_PARK_DATA !== null) {
     	var latlng;
+    	//var marker = new array();
     	var marker;
+    	var infowindow;
+    	//infowindow = new google.maps.InfoWindow({
+	    //   	content: 'some content'
+	    //});
+    	var contentString;
     	$.each(CAR_PARK_DATA.situation, function(i, val) {
+    		contentString = '<h3>' + getCarParkName(val.situationRecord.carParkIdentity) + '</h3>' +
+    			'<p>Capacity: ' + val.situationRecord.totalCapacity + '</p>' +
+    			'<p>Occupancy: ' + val.situationRecord.carParkOccupancy + '%</p>';
+    			
+    		infowindow = new google.maps.InfoWindow({
+    			content: contentString
+    		});
+    		
 	        latlng = new google.maps.LatLng(val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.latitude, 
 				val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.longitude);
+			//marker[i] = createMarker(latlng, map, val.id, contentString);
 	        marker = new google.maps.Marker({
 	            position: latlng,
 	            map: map,
-	            title: val.id
-	        });     		
+	            title: getCarParkName(val.situationRecord.carParkIdentity),
+	            //infowindow: infowindow
+	            html: contentString
+	        });  
+	        
+	        google.maps.event.addListener(marker, 'click', function() {
+	        	infowindow.setContent(this.html);
+	        	infowindow.open(map, this);
+	        });
+
     	});	
+    	
     }
     
     // Set min and max zoom values
