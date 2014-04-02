@@ -70,56 +70,20 @@ $("#postCodeSearch").submit(function(event) {
       getUrl = $form.attr("action");
       
     console.log("postCodeValue: " + postCodeValue);
-    getUrl += postCodeValue + ".json";
-    getUrl += "?callback=?";
+    getUrl += postCodeValue;
     console.log("getUrl: " + getUrl);
-    
-    //jQuery.support.cors = true;
     
     $.ajax({
         type: 'GET',
         url: getUrl,
-        //contentType: 'text/plain',
-        xhrFields: {
-            withCredentials: false
-        },
-        //crossDomain: 'true',
-        dataType: 'jsonp',
-        //jsonpCallback: 'jsonpCallback',
-        success: function(jsonpData) {
+        success: function(obj) {
             console.log("success");
+            console.log(JSON.stringify(obj));
         },
         error: function() {
             console.log("error");
         }
-    })
-    .done(function(data) {
-        console.log("inside getJSON");
-        console.log(data);
-        $("#result")
-        .append("lat:" + data.lat)
-        .append("long:" + data.long);
-    })
-    .fail(function(err) {
-        console.log("error: " + err.code);    
-    })
-    .always(function() {
-        console.log("complete");
     });
-    
-    /*$.getJSON(getUrl, {format: 'json'}, function(data) {
-        console.log("inside getJSON");
-    });
-    */
-    
-    /*$.get(url, function(data) {
-        console.log("inside get");
-        data = parseJSON(data);
-        console.log(data);
-        $("#result")
-        .append("lat:" + data.lat)
-        .append("long:" + data.long);
-    }, "json");*/
 });
 
 $("#carParkNorwich").submit(function(event) {
@@ -216,7 +180,7 @@ $( document ).on( "pageshow", "#map-page", function() {
 	    //});
     	var contentString;
     	$.each(CAR_PARK_DATA.situation, function(i, val) {
-    		contentString = '<h3>' + getCarParkName(val.situationRecord.carParkIdentity) + '</h3>' +
+    		contentString = '<h4>' + getCarParkName(val.situationRecord.carParkIdentity) + '</h4>' +
     			'<p>Capacity: ' + val.situationRecord.totalCapacity + '</p>' +
     			'<p>Occupancy: ' + val.situationRecord.carParkOccupancy + '%</p>';
     			

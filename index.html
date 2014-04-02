@@ -27,6 +27,11 @@
                 <h1>Park-Me-Happy</h1>
             </div>
             
+            <form action="http://mujtaba-test.apigee.net/v1/parkingrisks/postcode/" id="postCodeSearch">
+                <input type="text" name="postCode" id="postCode" value="" placeholder="Enter Post Code (with no spaces)..."/>
+                <input type="submit" value="Search" />
+            </form>            
+            
             <div data-role="content">
                 <h3></h3>
                 <a onclick="showDefaultMap()" data-role="button">Show Map (at Aviva)</a>
@@ -46,11 +51,6 @@
                     <p>Error: location services may be turned off</p>
                 </div>
             </div>        
-    
-            <form action="http://appvms.cloudapp.net/" id="postCodeSearch">
-                <input type="text" name="postCode" id="postCode" value="" placeholder="Enter Post Code (with no spaces)..."/>
-                <input type="submit" value="Search" />
-            </form>
             
             <form action="http://mujtaba-test.apigee.net/v1/carparknorwich/content.xml" id="carParkNorwich">
                 <input type="submit" value="Get Norwich Car Park Data" />
