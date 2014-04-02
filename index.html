@@ -32,9 +32,20 @@
                 <input type="submit" value="Search" />
             </form>            
             
+            <div id="postCodeResult"></div>  
+            
+            <form action="http://data.police.uk/api/crimes-street/all-crime" id="streetCrime">
+                <input type="submit" value="Get Police Street Crime Data" />
+            </form>  
+            
             <div data-role="content">
                 <h3></h3>
-                <a onclick="showDefaultMap()" data-role="button">Show Map (at Aviva)</a>
+                <a onclick="showSampleCrimeMap()" data-role="button">Show Sample Street Crime Data</a>
+            </div>                                    
+            
+            <div data-role="content">
+                <h3></h3>
+                <a onclick="showSampleHeatMap()" data-role="button">Show Sample Heatmap Data</a>
             </div>                
      
             <div data-role="content">
@@ -50,8 +61,8 @@
                 <div id="errorpopuptext" data-role="content">
                     <p>Error: location services may be turned off</p>
                 </div>
-            </div>        
-            
+            </div>
+                        
             <form action="http://mujtaba-test.apigee.net/v1/carparknorwich/content.xml" id="carParkNorwich">
                 <input type="submit" value="Get Norwich Car Park Data" />
             </form>

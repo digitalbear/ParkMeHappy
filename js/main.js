@@ -5,6 +5,7 @@ var GPS = false;
 var SEARCH_LATITUDE;
 var SEARCH_LONGITUDE;
 var CAR_PARK_DATA;
+var VEHICLE_CRIME_DATA;
 
 function getCurrentLocation() {
     if ( navigator.geolocation ) {
@@ -44,23 +45,10 @@ function showSearchLocation(searchLat, searchLong) {
     window.location = "#map-page";
 }
 
-function showDefaultMap() {
+function showSampleHeatMap() {
     SEARCH_LATITUDE = 52.63149689873963;
     SEARCH_LONGITUDE = 1.274688242306143;
     window.location = "#map-page";
-}
-
-function jsonpCallback(data) {
-    console.log("inside jsonpCallback");
-    if (!data.Error) {
-        $('#result').submit();
-    }
-    else {
-        $('#loading').hide();
-        $('#userForm').show();
-        alert(data.Message);
-    }
-    console.log(data);
 }
 
 $("#postCodeSearch").submit(function(event) {
@@ -79,9 +67,53 @@ $("#postCodeSearch").submit(function(event) {
         success: function(obj) {
             console.log("success");
             console.log(JSON.stringify(obj));
+            //set global coordinates
+            SEARCH_LATITUDE = obj.latitude;
+            SEARCH_LONGITUDE = obj.longitude;
+            var output = '<h3>Risk</h3>' + 
+            	'<p><b>Overall: </b>' + obj.risk.overall + '%</p>' +
+            	'<p><b>Overall: </b>' + obj.risk.theft + '%</p>' +
+            	'<p><b>Overall: </b>' + obj.risk.vandalism + '%</p>' +
+            	'<p><b>Overall: </b>' + obj.risk.otherCrime + '%</p>';
+            $('#postCodeResult').html(output);
         },
         error: function() {
-            console.log("error");
+            console.log("error getting post code data");
+        }
+    });
+});
+
+function showSampleCrimeMap() {
+    SEARCH_LATITUDE = 52.628410;
+    SEARCH_LONGITUDE = 1.295111;
+    window.location = "#map-page";
+}
+
+$("#streetCrime").submit(function(event) {
+    event.preventDefault();
+    var $form = $(this),
+      getUrl = $form.attr("action");
+
+    SEARCH_LATITUDE = 52.628410;
+    SEARCH_LONGITUDE = 1.295111;      
+    getUrl += '?lat=' + SEARCH_LATITUDE;
+    getUrl += '&lng=' + SEARCH_LONGITUDE;
+    console.log("getUrl: " + getUrl);
+    
+    $.ajax({
+        type: 'GET',
+        url: getUrl,
+        success: function(obj) {
+            console.log("success");
+            STREET_CRIME_DATA = $.grep(obj, function(val, i) {
+            	if (val.category == "vehicle-crime") {
+            		return true;
+            	}
+            })
+            //console.log(JSON.stringify(STREET_CRIME_DATA));
+        },
+        error: function() {
+            console.log("error getting street crime data");
         }
     });
 });
@@ -97,27 +129,10 @@ $("#carParkNorwich").submit(function(event) {
         type: 'GET',
         url: getUrl,
         success: function(obj) {
-            console.log("success");
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0]));
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0].id));
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0].situationRecord.probabilityOfOccurrence));
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0].situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.latitude));
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0].situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.longitude));
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0].situationRecord.carParkOccupancy));
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0].situationRecord.carParkStatus));
-            console.log(JSON.stringify(obj.d2LogicalModel.payloadPublication.situation[0].situationRecord.totalCapacity));
             CAR_PARK_DATA = obj.d2LogicalModel.payloadPublication;
-            /*var carParkArray = [];
-            var carPark = {};
-            $.each(obj.d2LogicalModel.payloadPublication.situation, function(i, val) {
-            	carPark.id = obj.d2LogicalModel.payloadPublication.situation[i].id;
-            	carPark.lat = obj.d2LogicalModel.payloadPublication.situation[i].situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.latitude;
-            	carParkArray.push(carPark);
-            });
-            console.log("lat x: " + carParkArray[3].lat);*/
         },
         error: function() {
-            console.log("error");
+            console.log("error getting car park data");
         }
     });
     
@@ -170,15 +185,12 @@ $( document ).on( "pageshow", "#map-page", function() {
     heatmap.setMap(map);
     
     // Add Car Park Data, if available
-    if (CAR_PARK_DATA !== null) {
+    if (typeof CAR_PARK_DATA !== 'undefined' && CAR_PARK_DATA != null) {
     	var latlng;
-    	//var marker = new array();
     	var marker;
     	var infowindow;
-    	//infowindow = new google.maps.InfoWindow({
-	    //   	content: 'some content'
-	    //});
     	var contentString;
+    	var icon = {url: 'http://maps.google.com/mapfiles/kml/pal4/icon7.png'};
     	$.each(CAR_PARK_DATA.situation, function(i, val) {
     		contentString = '<h4>' + getCarParkName(val.situationRecord.carParkIdentity) + '</h4>' +
     			'<p>Capacity: ' + val.situationRecord.totalCapacity + '</p>' +
@@ -190,12 +202,11 @@ $( document ).on( "pageshow", "#map-page", function() {
     		
 	        latlng = new google.maps.LatLng(val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.latitude, 
 				val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.longitude);
-			//marker[i] = createMarker(latlng, map, val.id, contentString);
 	        marker = new google.maps.Marker({
 	            position: latlng,
 	            map: map,
 	            title: getCarParkName(val.situationRecord.carParkIdentity),
-	            //infowindow: infowindow
+	            icon: icon,
 	            html: contentString
 	        });  
 	        
@@ -207,6 +218,24 @@ $( document ).on( "pageshow", "#map-page", function() {
     	});	
     	
     }
+    
+    // Add Street Crime Data, if available
+    if (typeof STREET_CRIME_DATA !== 'undefined' && STREET_CRIME_DATA != null) {
+    	var latlng;
+    	var marker;
+    	var icon = {url: 'http://maps.google.com/mapfiles/kml/pal3/icon33.png'};
+    	$.each(STREET_CRIME_DATA, function(i, val) {
+    		
+	        latlng = new google.maps.LatLng(val.location.latitude, 
+				val.location.longitude);
+	        marker = new google.maps.Marker({
+	            position: latlng,
+	            map: map,
+	            title: val.location.street.name,
+	            icon: icon
+	        });  
+    	});
+    }    
     
     // Set min and max zoom values
     var opt = { minZoom: 15, maxZoom: 17 };
