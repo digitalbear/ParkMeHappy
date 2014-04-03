@@ -7,10 +7,9 @@ var SEARCH_LATITUDE;
 var SEARCH_LONGITUDE;
 var MAP_ZOOM = 16;
 var HEATMAP_RADIUS = 50;
-var CAR_PARK_DATA;
-var VEHICLE_CRIME_DATA;
+var searchRadius = 1;
 
-function getCurrentLocation() {
+function getCurrentLocation(mapcanvas) {
     if ( navigator.geolocation ) {
         function success(pos) {
             // Location found, show map with these coordinates
@@ -20,7 +19,23 @@ function getCurrentLocation() {
             GPS = true;
             SEARCH_LATITUDE = MY_LATITUDE;
             SEARCH_LONGITUDE = MY_LONGITUDE;
-            window.location = "#map-page";
+            
+            var url = 'http://mujtaba-test.apigee.net/v1/parkingrisks/geolocation/latitude/' + SEARCH_LATITUDE +
+            	'/longitude/' + SEARCH_LONGITUDE;
+            console.log("url: " + url);
+		    $.ajax({
+		        type: 'GET',
+		        url: url,
+		        success: function(obj) {
+		            console.log("success");
+		            //showRiskResult(obj);
+		            showMap(mapCanvas);
+		        },
+		        error: function() {
+		            console.log("error getting risk data for coordinates");
+		        }
+		    });            
+            //window.location = "#map-page";
         }
         function fail(error) {
             var errors = {
@@ -73,12 +88,9 @@ $("#postCodeSearch").submit(function(event) {
             //set global coordinates
             SEARCH_LATITUDE = obj.latitude;
             SEARCH_LONGITUDE = obj.longitude;
-            var output = '<h3>Risk</h3>' + 
-            	'<p><b>Overall: </b>' + obj.risk.overall + '%</p>' +
-            	'<p><b>Overall: </b>' + obj.risk.theft + '%</p>' +
-            	'<p><b>Overall: </b>' + obj.risk.vandalism + '%</p>' +
-            	'<p><b>Overall: </b>' + obj.risk.otherCrime + '%</p>';
-            $('#postCodeResult').html(output);
+            //showRiskResult(obj);
+            populateRiskResult(obj.risk);
+            showMap('map-canvas-snapshot');
         },
         error: function() {
             console.log("error getting post code data");
@@ -86,60 +98,50 @@ $("#postCodeSearch").submit(function(event) {
     });
 });
 
+function showRiskResult(obj) {
+	var output = '<h3>Risk</h3>' + 
+    	'<p><b>Overall: </b>' + obj.risk.overall + '%</p>' +
+    	'<p><b>Overall: </b>' + obj.risk.theft + '%</p>' +
+    	'<p><b>Overall: </b>' + obj.risk.vandalism + '%</p>' +
+    	'<p><b>Overall: </b>' + obj.risk.otherCrime + '%</p>';
+    $('#riskResult').html(output);	
+}
+
 function showSampleCrimeMap() {
     SEARCH_LATITUDE = 52.628410;
     SEARCH_LONGITUDE = 1.295111;
     window.location = "#map-page";
 }
 
-$("#streetCrime").submit(function(event) {
-    event.preventDefault();
-    var $form = $(this),
-      getUrl = $form.attr("action");
+function getRiskRating(riskValue) {
+var result='';
+	if(riskValue<=33){
+		result = 'LOW';
+	}else if(riskValue<=66){
+		result = 'MEDIUM';
+	}else{
+		result = 'HIGH';
+	}    
+	return result;
+}
 
-    SEARCH_LATITUDE = 52.628410;
-    SEARCH_LONGITUDE = 1.295111;      
-    getUrl += '?lat=' + SEARCH_LATITUDE;
-    getUrl += '&lng=' + SEARCH_LONGITUDE;
-    console.log("getUrl: " + getUrl);
-    
-    $.ajax({
-        type: 'GET',
-        url: getUrl,
-        success: function(obj) {
-            console.log("success");
-            STREET_CRIME_DATA = $.grep(obj, function(val, i) {
-            	if (val.category == "vehicle-crime") {
-            		return true;
-            	}
-            });
-        },
-        error: function() {
-            console.log("error getting street crime data");
-        }
-    });
-});
+function populateRiskResult(riskData) {
+    overall = getRiskRating(riskData.overall);
+	theft = getRiskRating(riskData.theft);
+	vandalism = getRiskRating(riskData.vandalism);
+	crime = getRiskRating(riskData.otherCrime);
 
-$("#carParkNorwich").submit(function(event) {
-    event.preventDefault();
-    var $form = $(this),
-      getUrl = $form.attr("action");
-      
-    console.log("getUrl: " + getUrl);
-    
-    $.ajax({
-        type: 'GET',
-        url: getUrl,
-        success: function(obj) {
-        	console.log("success");
-            CAR_PARK_DATA = obj.d2LogicalModel.payloadPublication;
-        },
-        error: function() {
-            console.log("error getting car park data");
-        }
-    });
-    
-});
+	$('#result').find('#overallRisk').html("Overall parking risk</br></br><strong>"+overall+"</strong>");
+	$('#result').find('#overallRisk').removeClass('LOW MEDIUM HIGH').addClass(overall);
+	$('#result').find('#theftRisk').html("Theft risk</br></br><strong>"+theft+"</strong>");
+	$('#result').find('#theftRisk').removeClass('LOW MEDIUM HIGH').addClass(theft);
+	$('#result').find('#vandalismRisk').html("Vandalism risk</br></br><strong>"+vandalism+"</strong>");
+	$('#result').find('#vandalismRisk').removeClass('LOW MEDIUM HIGH').addClass(vandalism);
+	$('#result').find('#crimeRisk').html("Crime risk</br></br><strong>"+crime+"</strong>");
+	$('#result').find('#crimeRisk').removeClass('LOW MEDIUM HIGH').addClass(crime);
+	$('#result').show();
+		
+}
 
 function getCarParkName(str) {
 	var newStr = str.split(":");
@@ -149,13 +151,12 @@ function getCarParkName(str) {
 /*
  * Google Maps documentation: https://developers.google.com/maps/documentation/javascript/reference
  */
-$( document ).on( "pageshow", "#map-page", function() {
-    console.log("page loading");
+function showMap(mapCanvas){
     console.log("latitude: " + SEARCH_LATITUDE + ", longitude: " + SEARCH_LONGITUDE);
 
     var searchLatlng = new google.maps.LatLng(SEARCH_LATITUDE, SEARCH_LONGITUDE);
 
-    map = new google.maps.Map(document.getElementById('map-canvas'), {
+    map = new google.maps.Map(document.getElementById(mapCanvas), {
       center: searchLatlng,
       zoom: MAP_ZOOM,
       mapTypeId: google.maps.MapTypeId.ROADMAP
@@ -171,53 +172,6 @@ $( document ).on( "pageshow", "#map-page", function() {
         opacity: 0.5,
     });
     heatmap.setMap(map);
-    
-    // Add Car Park Data, if available
-    if (typeof CAR_PARK_DATA !== 'undefined' && CAR_PARK_DATA != null) {
-    	var latlng;
-    	var marker;
-    	var infowindow;
-    	var contentString;
-    	$.each(CAR_PARK_DATA.situation, function(i, val) {
-    		contentString = '<h4>' + getCarParkName(val.situationRecord.carParkIdentity) + '</h4>' +
-    			'<p>Capacity: ' + val.situationRecord.totalCapacity + '</p>' +
-    			'<p>Occupancy: ' + val.situationRecord.carParkOccupancy + '%</p>';
-    			
-    		infowindow = new google.maps.InfoWindow({
-    			content: contentString
-    		});
-    		
-	        latlng = new google.maps.LatLng(val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.latitude, 
-				val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.longitude);
-	        marker = new google.maps.Marker({
-	            position: latlng,
-	            map: map,
-	            title: getCarParkName(val.situationRecord.carParkIdentity),
-	            icon: getCarParkIcon(),
-	            html: contentString
-	        });  
-	        
-	        google.maps.event.addListener(marker, 'click', function() {
-	        	infowindow.setContent(this.html);
-	        	infowindow.open(map, this);
-	        });
-
-    	});	
-    	
-    }
-    
-    // Add Street Crime Data, if available
-    if (typeof STREET_CRIME_DATA !== 'undefined' && STREET_CRIME_DATA != null) {
-		$.each(STREET_CRIME_DATA, function(i, val) {
-		    var latlng = new google.maps.LatLng(val.location.latitude, val.location.longitude);
-		    var marker = new google.maps.Marker({
-		        position: latlng,
-		        map: map,
-		        title: val.location.street.name,
-		        icon: getStreetCrimeIcon()
-		    });	   		
-		});
-    }    
     
     // Place marker at search location
     var myLatlng = new google.maps.LatLng(SEARCH_LATITUDE, SEARCH_LONGITUDE);
@@ -259,13 +213,20 @@ $( document ).on( "pageshow", "#map-page", function() {
       map.setCenter(new google.maps.LatLng(y, x));
     });
     
-    // Listen for the bounds_changed event
-    google.maps.event.addListener(map, 'bounds_changed', function() {
+    // when tiles have loaded    
+    google.maps.event.addListener(map, 'tilesloaded', function() {
         var currBounds = map.getBounds();
         var currNorthEast = currBounds.getNorthEast();
-        //console.log("currNorthEast: " + currNorthEast);
+        console.log("tilesloaded - currNorthEast: " + currNorthEast);
         var currSouthWest = currBounds.getSouthWest();
-        //console.log("currSouthWest: " + currSouthWest);
+        console.log("tilesloaded - currSouthWest: " + currSouthWest);    
+
+    	getRiskData(heatmapDataCallback, searchRadius);
+    	
+    	getPoliceDataPoint(policeDataCallback);
+    	
+    	//getCarParkDataNorwich(carParkDataCallback); // we probably don't need this to be refreshed ever time the tiles are re-loaded
+   
     });
     
     // Listen for the zoom_changed event
@@ -299,28 +260,9 @@ $( document ).on( "pageshow", "#map-page", function() {
 	    
 	    // if zooming out then get more data
 	    if (currZoom < MAP_ZOOM) {
-	    	var heatmapData = getRiskData(searchRadius);
-	    	if (typeof heatmapData !== 'undefined' && heatmapData.length > 0) {
-	    		heatmap.setOptions({data: heatmapData});
-	    	}
+	    	getRiskData(heatmapDataCallback, searchRadius);
 	    	
-	    	function myCallback(streetCrimeData) {
-		    	if (typeof streetCrimeData !== 'undefined' && streetCrimeData.length > 0) {
-		    		console.log("inside streetCrimeData");
-		    		$.each(streetCrimeData, function(i, val) {
-		    			if (val.category == "vehicle-crime") {
-						    var latlng = new google.maps.LatLng(val.location.latitude, val.location.longitude);
-						    var marker = new google.maps.Marker({
-						        position: latlng,
-						        map: map,
-						        title: val.location.street.name,
-						        icon: getStreetCrimeIcon()
-						    });	   
-						}			
-		    		});
-		    	}
-	    	}
-	    	getPoliceDataPoly(myCallback, currNorthEast, currSouthWest);
+	    	getPoliceDataPoly(policeDataCallback, currNorthEast, currSouthWest);
 	    }
 	    
 	    // manually amend the heatmap radius
@@ -329,28 +271,119 @@ $( document ).on( "pageshow", "#map-page", function() {
 	    MAP_ZOOM = currZoom;   
     });
 
-});
+	getCarParkDataNorwich(carParkDataCallback);
+		
+}
 
-function getRiskData(searchRadius) {
-	return; // not working at the moment
-    var url = 'http://mujtaba-test.apigee.net/v1/postcodesWithinDistanceUsingGeo?lat=' + SEARCH_LATITUDE +
-    	'&lng=' + SEARCH_LONGITUDE + '&miles=' + searchRadius + '&format=json';
+$( document ).on( "pageshow", "#map-page", function() {
+    console.log("page loading");
+		showMap('map-canvas');
+}); 
+
+function heatmapDataCallback(heatmapData) {
+	if (typeof heatmapData !== 'undefined' && heatmapData != null) {
+		console.log("inside heatmapData");
+		heatmap.setOptions({data: heatmapData});
+	}
+}
+
+function carParkDataCallback(carParkData) {
+	if (typeof carParkData !== 'undefined' && carParkData != null) {
+		console.log("inside carParkData");
+		$.each(carParkData.d2LogicalModel.payloadPublication.situation, function(i, val) {
+    		contentString = '<h4>' + getCarParkName(val.situationRecord.carParkIdentity) + '</h4>' +
+    			'<p>Capacity: ' + val.situationRecord.totalCapacity + '</p>' +
+    			'<p>Occupancy: ' + val.situationRecord.carParkOccupancy + '%</p>';
+    			
+    		infowindow = new google.maps.InfoWindow({
+    			content: contentString
+    		});
+    		
+	        var latlng = new google.maps.LatLng(val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.latitude, 
+				val.situationRecord.groupOfLocations.locationContainedInGroup.pointByCoordinates.pointCoordinates.longitude);
+	        var marker = new google.maps.Marker({
+	            position: latlng,
+	            map: map,
+	            title: getCarParkName(val.situationRecord.carParkIdentity),
+	            icon: getCarParkIcon(),
+	            html: contentString
+	        });  
+	        
+	        google.maps.event.addListener(marker, 'click', function() {
+	        	infowindow.setContent(this.html);
+	        	infowindow.open(map, this);
+	        });			
+		});
+    }
+}
+
+
+function policeDataCallback(streetCrimeData) {
+	if (typeof streetCrimeData !== 'undefined' && streetCrimeData.length > 0) {
+		console.log("inside streetCrimeData");
+		$.each(streetCrimeData, function(i, val) {
+			if (val.category == "vehicle-crime") {
+			    var latlng = new google.maps.LatLng(val.location.latitude, val.location.longitude);
+			    var marker = new google.maps.Marker({
+			        position: latlng,
+			        map: map,
+			        title: val.location.street.name,
+			        icon: getStreetCrimeIcon()
+			    });	   
+			}			
+		});
+	}
+}
+
+function getRiskData(callback, searchRadius) {
+    /*var url = 'http://mujtaba-test.apigee.net/v1/postcodesWithinDistanceUsingGeo?lat=' + SEARCH_LATITUDE +
+    	'&lng=' + SEARCH_LONGITUDE + '&miles=' + searchRadius + '&format=json';*/
+    var url = 'http://mujtaba-test.apigee.net/v1/parkingrisks/georadius/latitude/' + SEARCH_LATITUDE +
+    	'/longitude/' + SEARCH_LONGITUDE + '/radius/' + searchRadius;
     console.log("url: " + url);
     
     $.ajax({
         type: 'GET',
         url: url,
-        success: function(obj) {
-            console.log("success");
-            console.log(JSON.stringify(obj));
-            return obj;
-
-        },
+        dataType: 'json',        
+        success: callback,
         error: function() {
-            console.log("error getting post code data within radius");
+            console.log("error getting risk data within radius");
             return;
         }
      });
+}
+
+function getCarParkDataNorwich(callback) {
+    var url = 'http://mujtaba-test.apigee.net/v1/carparknorwich/content.xml';
+    console.log("url: " + url);
+    
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',        
+        success: callback,
+        error: function() {
+            console.log("error getting car park data");
+        }
+    });
+    
+}
+
+function getPoliceDataPoint(callback) {	
+    var url = 'http://data.police.uk/api/crimes-street/all-crime?lat=' + SEARCH_LATITUDE +
+    	'&lng=' + SEARCH_LONGITUDE;
+    console.log("url: " + url);
+    
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        success: callback,
+        error: function() {
+            console.log("error getting police data from point");
+        }
+    });
 }
 
 function getPoliceDataPoly(callback, northEast, southWest) {
@@ -361,7 +394,6 @@ function getPoliceDataPoly(callback, northEast, southWest) {
     var url = 'http://data.police.uk/api/crimes-street/all-crime?poly=' +
     	latNE + ',' + lngSW + ':' + latNE + ',' + lngNE + ':' + latSW + ',' + lngNE;
     console.log("url: " + url);
-    var retVal = new Array();
     
     $.ajax({
         type: 'GET',
