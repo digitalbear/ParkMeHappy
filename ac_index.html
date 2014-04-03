@@ -13,7 +13,6 @@
         <link rel="stylesheet" href="css/normalize.css">
         <link rel="stylesheet" href="css/main.css">
         <link rel="stylesheet" href="css/map.css">
-		<link rel="stylesheet" href="css/custom.css">
         <script src="js/vendor/modernizr-2.7.1.min.js"></script>
     </head>
     <body>
@@ -27,59 +26,32 @@
             <div data-role="header" data-position="fixed">
                 <h1>Park-Me-Happy</h1>
             </div>
-			
-			<div data-role="content">                
-                <a onclick="getCurrentLocation('map-canvas-snapshot')" data-role="button">Use current location</a>								
-				
-				<p>or</p>
-				
-				<form action="http://mujtaba-test.apigee.net/v1/parkingrisks/postcode/" id="postCodeSearch">
-				
-				<fieldset class="ui-grid-a">
-					<div class="ui-block-a"><input type="text" name="postCode" id="postCode" value="" placeholder="Enter Post Code (with no spaces)..."/></div>
-					<div class="ui-block-b"><input type="submit" value="Search" /></div>
-				</fieldset>
-				
-				</form>            
-			</div>
-			
-			<div id="result" data-role="content" style="display:none;">
-			
-				<fieldset class="ui-grid-solo">
-					<div class="ui-block-a">						
-						<button type="button" id="overallRisk" data-theme="a">Overall parking risk</button>
-					</div>
-				</fieldset>
-				<fieldset class="ui-grid-b">
-					<div class="ui-block-a">
-						<button type="button" id="theftRisk" data-theme="c">Theft risk</button>
-					</div>
-					<div class="ui-block-b">
-						<button type="button" id="vandalismRisk" data-theme="c">Vandalism risk</button>
-					</div>	   
-					<div class="ui-block-b">
-						<button type="button" id="crimeRisk" data-theme="c">Crime risk</button>
-					</div>	   
-				</fieldset>			
-			</div>
-			
-			<div data-role="content" id="map-page-snapshot" data-add-back-btn="true">
-			  
-			  <div data-role="header" data-position="fixed">
-				<h1>Park-Me-Happy Map</h1>
-			  </div>
-			  
-			  <div data-role="content" id="map-canvas-snapshot" style="height:380px;">
-				<!-- map loads here... -->
-			  </div>
-			  
-			</div>
-
-			
-            <div data-role="content" style="display:none;">
+            
+            <form action="http://mujtaba-test.apigee.net/v1/parkingrisks/postcode/" id="postCodeSearch">
+                <input type="text" name="postCode" id="postCode" value="" placeholder="Enter Post Code (with no spaces)..."/>
+                <input type="submit" value="Search" />
+            </form>            
+            
+            <div id="postCodeResult"></div>  
+            
+            <form action="http://data.police.uk/api/crimes-street/all-crime" id="streetCrime">
+                <input type="submit" value="Get Police Street Crime Data" />
+            </form>  
+            
+            <div data-role="content">
                 <h3></h3>
-                <a onclick="showDefaultMap()" data-role="button">Show Map (at Aviva)</a>
+                <a onclick="showSampleCrimeMap()" data-role="button">Show Sample Street Crime Data</a>
+            </div>                                    
+            
+            <div data-role="content">
+                <h3></h3>
+                <a onclick="showSampleHeatMap()" data-role="button">Show Sample Heatmap Data</a>
             </div>                
+     
+            <div data-role="content">
+                <h3></h3>
+                <a onclick="getCurrentLocation()" data-role="button">Search Near Me</a>
+            </div>        
     
             <div id="locationerrorpopup" data-role="popup" data-dismissible="true"
                 class="ui-corner-all">
@@ -89,13 +61,14 @@
                 <div id="errorpopuptext" data-role="content">
                     <p>Error: location services may be turned off</p>
                 </div>
-            </div>        
-            
-            <form action="http://mujtaba-test.apigee.net/v1/carparknorwich/content.xml" id="carParkNorwich" style="display:none;">
+            </div>
+                        
+            <form action="http://mujtaba-test.apigee.net/v1/carparknorwich/content.xml" id="carParkNorwich">
                 <input type="submit" value="Get Norwich Car Park Data" />
             </form>
             
-                  
+            <div id="result"></div>
+      
             <div data-role="footer" data-position="fixed">
                 <h3></h3>
                 <a href="about.html" data-role="button"  class="ui-btn-right">About</a>
@@ -112,7 +85,7 @@
             </div>
         </div>
 
-		<div data-role="page" id="map-page" data-add-back-btn="true">
+        <div data-role="page" id="map-page" data-add-back-btn="true">
           
           <div data-role="header" data-position="fixed">
             <h1>Park-Me-Happy Map</h1>
@@ -122,7 +95,7 @@
             <!-- map loads here... -->
           </div>
           
-        </div>        
+        </div>
 
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
@@ -130,6 +103,7 @@
         <script src="http://maps.googleapis.com/maps/api/js?libraries=visualization&key=AIzaSyDwZEp-H7ZEyr1x4JPerPlfgdxNnn3fzUQ&sensor=true"></script>
         <script src="js/plugins.js"></script>
         <script src="js/main.js"></script>
+        <!--<script src="http://uk-postcodes.com/postcode/WR141ET.json?callback=?"></script>-->
 
     </body>
 </html>
