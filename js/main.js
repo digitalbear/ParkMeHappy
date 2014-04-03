@@ -1,4 +1,5 @@
 // default latitude and longitude values - Surrey Street, Norwich, NR1 3UY
+var map;
 var MY_LATITUDE;
 var MY_LONGITUDE;
 var GPS = false;
@@ -112,7 +113,6 @@ $("#streetCrime").submit(function(event) {
             		return true;
             	}
             });
-            //console.log(JSON.stringify(STREET_CRIME_DATA));
         },
         error: function() {
             console.log("error getting street crime data");
@@ -178,7 +178,6 @@ $( document ).on( "pageshow", "#map-page", function() {
     	var marker;
     	var infowindow;
     	var contentString;
-    	var icon = {url: 'http://maps.google.com/mapfiles/kml/pal4/icon7.png'};
     	$.each(CAR_PARK_DATA.situation, function(i, val) {
     		contentString = '<h4>' + getCarParkName(val.situationRecord.carParkIdentity) + '</h4>' +
     			'<p>Capacity: ' + val.situationRecord.totalCapacity + '</p>' +
@@ -194,7 +193,7 @@ $( document ).on( "pageshow", "#map-page", function() {
 	            position: latlng,
 	            map: map,
 	            title: getCarParkName(val.situationRecord.carParkIdentity),
-	            icon: icon,
+	            icon: getCarParkIcon(),
 	            html: contentString
 	        });  
 	        
@@ -209,33 +208,28 @@ $( document ).on( "pageshow", "#map-page", function() {
     
     // Add Street Crime Data, if available
     if (typeof STREET_CRIME_DATA !== 'undefined' && STREET_CRIME_DATA != null) {
-    	var latlng;
-    	var marker;
-    	var icon = {url: 'http://maps.google.com/mapfiles/kml/pal3/icon33.png'};
-    	$.each(STREET_CRIME_DATA, function(i, val) {
-    		
-	        latlng = new google.maps.LatLng(val.location.latitude, val.location.longitude);
-	        marker = new google.maps.Marker({
-	            position: latlng,
-	            map: map,
-	            title: val.location.street.name,
-	            icon: icon
-	        });  
-    	});
+		$.each(STREET_CRIME_DATA, function(i, val) {
+		    var latlng = new google.maps.LatLng(val.location.latitude, val.location.longitude);
+		    var marker = new google.maps.Marker({
+		        position: latlng,
+		        map: map,
+		        title: val.location.street.name,
+		        icon: getStreetCrimeIcon()
+		    });	   		
+		});
     }    
     
     // Place marker at search location
     var myLatlng = new google.maps.LatLng(SEARCH_LATITUDE, SEARCH_LONGITUDE);
-    var icon = {url: 'http://maps.google.com/mapfiles/kml/pal2/icon47.png'};
     var marker = new google.maps.Marker({
         position: myLatlng,
         map: map,
         title:"My Location!",
-        icon: icon
+        icon: getMyLocationIcon()
     });
         
     // Set min and max zoom values
-    var opt = { minZoom: 15, maxZoom: 17 };
+    var opt = { minZoom: 14, maxZoom: 17 };
     map.setOptions(opt);
     
     // Bounds for UK
@@ -286,6 +280,10 @@ $( document ).on( "pageshow", "#map-page", function() {
 	    var currZoom = map.getZoom();
 	    console.log("current zoom: " + currZoom);
 	    switch (currZoom) {
+	    	case 14: 
+	    		HEATMAP_RADIUS = 15;
+	    		searchRadius = 3;
+	    		break;
 	    	case 15: 
 	    		HEATMAP_RADIUS = 25;
 	    		searchRadius = 2;
@@ -302,17 +300,39 @@ $( document ).on( "pageshow", "#map-page", function() {
 	    // if zooming out then get more data
 	    if (currZoom < MAP_ZOOM) {
 	    	var heatmapData = getRiskData(searchRadius);
-	    	heatmap.setOptions({data: heatmapData});
+	    	if (typeof heatmapData !== 'undefined' && heatmapData.length > 0) {
+	    		heatmap.setOptions({data: heatmapData});
+	    	}
+	    	
+	    	function myCallback(streetCrimeData) {
+		    	if (typeof streetCrimeData !== 'undefined' && streetCrimeData.length > 0) {
+		    		console.log("inside streetCrimeData");
+		    		$.each(streetCrimeData, function(i, val) {
+		    			if (val.category == "vehicle-crime") {
+						    var latlng = new google.maps.LatLng(val.location.latitude, val.location.longitude);
+						    var marker = new google.maps.Marker({
+						        position: latlng,
+						        map: map,
+						        title: val.location.street.name,
+						        icon: getStreetCrimeIcon()
+						    });	   
+						}			
+		    		});
+		    	}
+	    	}
+	    	getPoliceDataPoly(myCallback, currNorthEast, currSouthWest);
 	    }
-	    MAP_ZOOM = currZoom;
 	    
+	    // manually amend the heatmap radius
 	    heatmap.setOptions({radius: HEATMAP_RADIUS});
-    	    
+
+	    MAP_ZOOM = currZoom;   
     });
 
 });
 
 function getRiskData(searchRadius) {
+	return; // not working at the moment
     var url = 'http://mujtaba-test.apigee.net/v1/postcodesWithinDistanceUsingGeo?lat=' + SEARCH_LATITUDE +
     	'&lng=' + SEARCH_LONGITUDE + '&miles=' + searchRadius + '&format=json';
     console.log("url: " + url);
@@ -331,7 +351,50 @@ function getRiskData(searchRadius) {
             return;
         }
      });
-     
+}
+
+function getPoliceDataPoly(callback, northEast, southWest) {
+	var latNE = northEast.lat();
+	var lngNE = northEast.lng();
+	var latSW = southWest.lat();
+	var lngSW = southWest.lng();	
+    var url = 'http://data.police.uk/api/crimes-street/all-crime?poly=' +
+    	latNE + ',' + lngSW + ':' + latNE + ',' + lngNE + ':' + latSW + ',' + lngNE;
+    console.log("url: " + url);
+    var retVal = new Array();
+    
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        success: callback,
+        error: function() {
+            console.log("error getting police data within polygon");
+        }
+    });
+}
+
+function plotStreetCrimeData(i, obj) {
+    var latlng = new google.maps.LatLng(obj.location.latitude, obj.location.longitude);
+    var marker = new google.maps.Marker({
+        position: latlng,
+        map: map,
+        title: obj.location.street.name,
+        icon: getStreetCrimeIcon()
+    });
+    console.log("obj.location.street.name: " + obj.location.street.name);
+}
+
+function getMyLocationIcon() {
+	return {url: 'http://maps.google.com/mapfiles/kml/pal2/icon47.png'};
+}
+
+function getCarParkIcon() {
+	return {url: 'http://maps.google.com/mapfiles/kml/pal4/icon7.png'};
+}
+
+function getStreetCrimeIcon() {
+	return {url: 'http://maps.google.com/mapfiles/kml/pal3/icon33.png'};
 }
 
 function plotPointsOnHeatMap() {
